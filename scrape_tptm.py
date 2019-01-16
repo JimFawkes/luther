@@ -5,9 +5,9 @@ URL: https://talkpython.fm/
 # Refactor:
     - Make to class
     - Add config
+    - Improve logging
 
 # TODO:
-    - Add logging (loguru)
     - Add docstrings
 """
 
