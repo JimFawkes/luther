@@ -33,18 +33,18 @@ logger.add(f"logs/{_log_file_name}.log", rotation="1 day")
 TPTM_BASE_URL = "https://talkpython.fm"
 TPTM_EPISODES_URL = "https://talkpython.fm/episodes/all"
 
-# display = Display(visible=0, size=(800, 600))
-# display.start()
+display = Display(visible=0, size=(800, 600))
+display.start()
 
 
 def get_driver():
 
-    options = webdriver.ChromeOptions()
-    options.add_argument("headless")
-    chromedriver = "/Applications/chromedriver"  # path to the chromedriver executable
-    os.environ["webdriver.chrome.driver"] = chromedriver
-    return webdriver.Chrome(chromedriver, chrome_options=options)
-    # return webdriver.Firefox()
+    # options = webdriver.ChromeOptions()
+    # options.add_argument("headless")
+    # chromedriver = "/Applications/chromedriver"  # path to the chromedriver executable
+    # os.environ["webdriver.chrome.driver"] = chromedriver
+    # return webdriver.Chrome(chromedriver, chrome_options=options)
+    return webdriver.Firefox()
 
 
 def save_to_pickle(data, filename):
