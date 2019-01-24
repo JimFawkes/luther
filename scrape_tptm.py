@@ -14,6 +14,7 @@ URL: https://talkpython.fm/
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
+from pyvirtualdisplay import Display
 import time
 import pickle
 import datetime
@@ -25,18 +26,25 @@ from loguru import logger
 
 import os
 
-logger.add("logs/scrape_tptm_{time}.log", rotation="100 MB")
+_log_file_name = __file__.split("/")[-1].split(".")[0]
+logger.add(f"logs/{_log_file_name}.log", rotation="1 day")
 
 
 TPTM_BASE_URL = "https://talkpython.fm"
 TPTM_EPISODES_URL = "https://talkpython.fm/episodes/all"
 
-chromedriver = "/Applications/chromedriver"  # path to the chromedriver executable
-os.environ["webdriver.chrome.driver"] = chromedriver
+# display = Display(visible=0, size=(800, 600))
+# display.start()
 
 
 def get_driver():
-    return webdriver.Chrome(chromedriver)
+
+    options = webdriver.ChromeOptions()
+    options.add_argument("headless")
+    chromedriver = "/Applications/chromedriver"  # path to the chromedriver executable
+    os.environ["webdriver.chrome.driver"] = chromedriver
+    return webdriver.Chrome(chromedriver, chrome_options=options)
+    # return webdriver.Firefox()
 
 
 def save_to_pickle(data, filename):
@@ -51,6 +59,12 @@ def get_from_pickle(filename):
 
 @logger.catch
 def try_to_load_from_pickle(load_from_pickle=True, filename=None, **kwargs):
+    """If there is a pickle file with the filename, return its content,
+    otherwise scrape the data.
+
+        load_from_pickle: Ignore pickled file.
+    """
+
     if load_from_pickle and filename:
         try:
             data = get_from_pickle(filename)
@@ -68,6 +82,11 @@ def try_to_load_from_pickle(load_from_pickle=True, filename=None, **kwargs):
 
 @logger.catch
 def try_to_save_to_pickle(data, dump_to_pickle=True, filename=None, **kwargs):
+    """Try to save data to a pickle file.
+
+    Note: There should not be a reason why this does not work.
+    """
+
     if dump_to_pickle and filename:
         try:
             save_to_pickle(data, filename)
@@ -80,13 +99,17 @@ def try_to_save_to_pickle(data, dump_to_pickle=True, filename=None, **kwargs):
 
 
 @logger.catch
-def get_episode_list(driver, **kwargs):
-
+def get_episode_list(**kwargs):
+    """Scrape the episode list from the TPTM_EPISODES_URL.
+    """
+    logger.info(f"Get Episode List for {kwargs}")
     data = try_to_load_from_pickle(**kwargs)
     if data:
-        return data
+        logger.info(f"Got data from pickle.")
+        return data, True
 
-    driver.get(TPTM_EPISODES_URL)
+    driver = get_driver()
+    driver.get(kwargs["url"])
 
     try:
         episodes_table = driver.find_elements_by_class_name("episodes")
@@ -94,7 +117,7 @@ def get_episode_list(driver, **kwargs):
         episode_rows = episodes_table_body.find_elements_by_tag_name("tr")
     except NoSuchElementException as e:
         logger.error(e)
-        return None
+        return None, False
 
     entries_list = []
     for idx, row in enumerate(episode_rows):
@@ -115,20 +138,31 @@ def get_episode_list(driver, **kwargs):
         )
         entries_list.append(episode_dict)
 
+    entries = remove_none_from_list(entries_list)
+
     try_to_save_to_pickle(entries_list, **kwargs)
 
-    return entries_list
+    driver.close()
+    logger.success(f"Got Episode List.")
+    return entries_list, False
 
 
 @logger.catch
-def get_mentioned_links_for_episode(driver, episode, **kwargs):
+def get_mentioned_links_for_episode(episode, **kwargs):
+
+    show_number = episode.get("show_number", "999999")
+    show_number = show_number.replace("#", "")
+    show_number = int(show_number)
 
     data = try_to_load_from_pickle(
-        filename=f"data/episodes/cleaned_episode_{episode['show_number']}.pk"
+        filename=f"data/episodes/cleaned_episode_{show_number}.pk"
     )
-    if data:
-        return data
+    if data is not None:
+        return data, True
 
+    # TODO: Refactor to ContextManager
+    time.sleep(get_random_wait_time())
+    driver = get_driver()
     driver.get(episode["episode_url"])
     try:
         episode_dates_info = driver.find_element_by_class_name("published-date").text
@@ -140,7 +174,7 @@ def get_mentioned_links_for_episode(driver, episode, **kwargs):
         logger.error(e)
         logger.error(f"Encounterd a problem when retrieving info for episode {episode}")
         logger.error(f"Ignoring this episode")
-        return None
+        return None, False
 
     reference_list = []
     for reference in episode_references:
@@ -149,11 +183,13 @@ def get_mentioned_links_for_episode(driver, episode, **kwargs):
         )
 
     episode["dates_info"] = episode_dates_info
-    episode["reference_list"] = reference_list
+    episode["reference_list"] = remove_none_from_list(reference_list)
     logger.info(
         f"Got info for episode {episode['show_number']} with idx: {episode['idx']}, named: {episode['title']}"
     )
-    return episode
+
+    driver.close()
+    return episode, False
 
 
 @logger.catch
@@ -180,11 +216,6 @@ def clean_episode_dates_info(episode, **kwargs):
     episode.pop("dates_info", None)
     episode.pop("date", None)
 
-    try_to_save_to_pickle(
-        data=episode,
-        filename=f"data/episodes/cleaned_episode_{episode['show_number']}.pk",
-    )
-
     return episode
 
 
@@ -201,8 +232,10 @@ def convert_to_datetime(dt_str, dt_format, timezone="PST"):
     return converted_dt.date()
 
 
+@logger.catch
 def sort_reference_links(episode):
     references = episode["reference_list"]
+    references = remove_none_from_list(references)
     github_references = []
     github_reference_count = 0
 
@@ -217,12 +250,20 @@ def sort_reference_links(episode):
     return episode
 
 
+@logger.catch
 def clean_episode(episode):
-    if not episode:
+    if episode is None:
+        logger.warning(f"Can not clean NoneType, returning None.")
         return None
     episode = clean_episode_dates_info(episode)
     episode = clean_episode_show_number(episode)
     episode = sort_reference_links(episode)
+
+    try_to_save_to_pickle(
+        data=episode,
+        filename=f"data/episodes/cleaned_episode_{episode['show_number']}.pk",
+    )
+    logger.info(f"Cleaned Episode {episode}")
     return episode
 
 
@@ -235,26 +276,52 @@ def get_if_not_pickled(filename, get_content, *args, **kwargs):
 
 
 def get_random_wait_time():
-    return 0.5 * (np.random.poisson() - 1)
+    wait_time = abs(0.5 * (np.random.poisson() - 1))
+    logger.debug(f"Wait for {wait_time}s ...")
+    return wait_time
+
+
+def remove_none_from_list(list_):
+    length = len(list_)
+    try:
+        while True:
+            list_.remove(None)
+    except ValueError:
+        pass
+
+    logger.info(f"Removed {length - len(list_)} null entries from list.")
+
+    return list_
 
 
 @logger.catch
-def get_all_episodes(filename="data/talk_python_to_me_episode_data_clean.pk"):
+def get_all_episodes(podcast_info):
+    logger.info(f"Get all Episodes for {podcast_info}.")
 
-    data = try_to_load_from_pickle(filename=filename)
+    data = try_to_load_from_pickle(**podcast_info)
     if data:
-        return data
+        data = remove_none_from_list(data)
+        return data, True
 
-    driver = get_driver()
-    episode_list = get_episode_list(driver, filename="data/episode_list.pk")
+    episode_list, pickled = get_episode_list(**podcast_info)
     cleaned_episode_list = []
 
     for entry in episode_list:
-        get_random_wait_time()
-        episode = get_mentioned_links_for_episode(driver, entry)
-        episode = clean_episode(episode)
+        episode, pickled = get_mentioned_links_for_episode(entry)
+        if episode is None:
+            continue
+        if not pickled:
+            episode = clean_episode(episode)
+        episode["reference_list"] = remove_none_from_list(episode["reference_list"])
+        episode["github_references"] = remove_none_from_list(
+            episode["github_references"]
+        )
         cleaned_episode_list.append(episode)
 
-    try_to_save_to_pickle(data=cleaned_episode_list, filename=filename)
+    cleaned_episodes = remove_none_from_list(cleaned_episode_list)
 
-    return cleaned_episode_list
+    try_to_save_to_pickle(data=cleaned_episodes, **podcast_info)
+
+    logger.success(f"Got all Episodes.")
+    return cleaned_episodes, False
+
