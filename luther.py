@@ -380,7 +380,7 @@ def run_all():
 
     clean = pd.concat(clean_dfs)
 
-    with open('', 'wb') as f:
+    with open('data/dataframe/clean_data_frame_run_all_'+get_timestamp()+'.pk', 'wb') as f:
         pickle.dump(clean, f)
 
     training, validation = partition_timeseries_podcast_data(clean)
