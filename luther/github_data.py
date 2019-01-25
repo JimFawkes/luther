@@ -2,9 +2,8 @@ import datetime
 import pytz
 from loguru import logger
 import pickle
-from get_github_data import get_raw_stargazer_info
-
-from base import LutherBaseClass
+from .get_github_data import get_raw_stargazer_info
+from .base import LutherBaseClass
 
 _log_file_name = __file__.split("/")[-1].split(".")[0]
 logger.add(f"logs/{_log_file_name}.log", rotation="1 day")
