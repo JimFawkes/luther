@@ -11,7 +11,8 @@ The Task was to use:
 The Question I wanted to answer was:
  _"How great of an impact on your GitHub Repository can I predict if it is featured on a Python Podcast?"_
 
-
+**Summary:**
+ - [Presentation Slides](./presentation/Project\ Luther.pptx)
 ____
 
 This repository contains the code used to 
