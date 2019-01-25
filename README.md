@@ -19,3 +19,22 @@ This repository contains the code used to
  - clean it
  - divide it into a training (60%), validation (20%) and test (20%) set
  - run, fit and validate models on the data
+
+
+____
+
+The data used, is scraped from the [Talk Python To Me](talkpython.fm) Podcast, and retrieved using the GitHub API v4.
+
+___
+
+Tools & Technology:
+ - Selenium
+ - Pandas and Numpy
+ - Statsmodels
+ - Sklearn
+ - plotly, matplotlib, seaborn
+ - Docker
+ - AWS
+ - GraphQL
+
+___
