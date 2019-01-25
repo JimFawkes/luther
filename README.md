@@ -23,7 +23,7 @@ This repository contains the code used to
 
 ____
 
-The data used, is scraped from the [Talk Python To Me](talkpython.fm) Podcast, and retrieved using the GitHub API v4.
+The data used, is from the [Talk Python To Me](talkpython.fm) Podcast, and retrieved using the GitHub API v4.
 
 ___
 
