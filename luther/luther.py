@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 import pytz
 
-from .github_data import Repository, StarGazer
-from .episode_data import Podcast, Episode, Reference
-from . import scrape_tptm as stptm
+from github_data import Repository, StarGazer
+from episode_data import Podcast, Episode, Reference
+import scrape_tptm as stptm
 
 from loguru import logger
 

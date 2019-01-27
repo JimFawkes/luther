@@ -14,14 +14,15 @@ URL: https://talkpython.fm/
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
+from dotenv import load_dotenv
 
-# from pyvirtualdisplay import Display
 import time
 import pickle
 import datetime
 import pytz
 import re
 import numpy as np
+import os
 
 from loguru import logger
 
@@ -34,18 +35,15 @@ logger.add(f"logs/{_log_file_name}.log", rotation="1 day")
 TPTM_BASE_URL = "https://talkpython.fm"
 TPTM_EPISODES_URL = "https://talkpython.fm/episodes/all"
 
-# display = Display(visible=0, size=(800, 600))
-# display.start()
-
 
 def get_driver():
 
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
-    chromedriver = "/usr/local/bin/chromedriver"  # path to the chromedriver executable
+    options.add_argument('--no-sandbox')
+    chromedriver = os.getenv("CHROMEWEBDRIVER_PATH", "/usr/local/bin/chromedriver")   # path to the chromedriver executable
     os.environ["webdriver.chrome.driver"] = chromedriver
     return webdriver.Chrome(chromedriver, chrome_options=options)
-    # return webdriver.Firefox()
 
 
 def save_to_pickle(data, filename):

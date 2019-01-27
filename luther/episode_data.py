@@ -1,9 +1,9 @@
 import re
 from loguru import logger
 
-from .github_data import Repository, StarGazer
-from .base import LutherBaseClass
-from .get_github_data import get_raw_repository_info
+from github_data import Repository, StarGazer
+from base import LutherBaseClass
+from get_github_data import get_raw_repository_info
 
 
 _log_file_name = __file__.split("/")[-1].split(".")[0]

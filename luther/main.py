@@ -1,5 +1,5 @@
-from . import luther
-from . import modeling
+import luther
+import modeling
 
 from loguru import logger
 
