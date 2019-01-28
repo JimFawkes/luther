@@ -12,7 +12,7 @@ The Question I wanted to answer was:
  _"How great of an impact on your GitHub Repository can I predict if it is featured on a Python Podcast?"_
 
 **Summary:**
-The entire pipeline can be run by running the [run_on_remote.sh](run_on_remote.sh) script. This will run the pipeline in a docker container, using the docker image: jimfawkes/project-luther.
+The entire pipeline can be run by running the [run_container.sh](run_container.sh) script. This will run the pipeline in a docker container, using the docker image: jimfawkes/project-luther.
 
 _Note: Running the entire pipleine will take 60min+_
 

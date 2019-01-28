@@ -10,4 +10,4 @@ mkdir -p data/dataframe
 mkdir -p data/stargazer
 mkdir -p data/validation_result
 
-docker run -it -v ${PWD}/logs:/usr/src/app/logs -v ${PWD}/data:/usr/src/app/data jimfawkes/project-luther:dev
+docker run -it -v ${PWD}/logs:/usr/src/app/logs -v ${PWD}/data:/usr/src/app/data jimfawkes/project-luther:latest
