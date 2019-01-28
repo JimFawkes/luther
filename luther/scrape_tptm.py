@@ -40,8 +40,10 @@ def get_driver():
 
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
-    options.add_argument('--no-sandbox')
-    chromedriver = os.getenv("CHROMEWEBDRIVER_PATH", "/usr/local/bin/chromedriver")   # path to the chromedriver executable
+    options.add_argument("--no-sandbox")
+    chromedriver = os.getenv(
+        "CHROMEWEBDRIVER_PATH", "/usr/local/bin/chromedriver"
+    )  # path to the chromedriver executable
     os.environ["webdriver.chrome.driver"] = chromedriver
     return webdriver.Chrome(chromedriver, chrome_options=options)
 
@@ -323,4 +325,3 @@ def get_all_episodes(podcast_info):
 
     logger.success(f"Got all Episodes.")
     return cleaned_episodes, False
-

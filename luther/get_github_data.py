@@ -28,24 +28,6 @@ GITHUB_API_ENDPOINT = os.getenv(
 GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
 GITHUB_API_TOKEN = os.getenv("GITHUB_API_ACCESS_TOKEN")
 
-"""
-SG_LIMITATION_STR_TEMPLATE Options
-after: String
-
-Returns the elements in the list that come after the specified cursor.
-before: String
-
-Returns the elements in the list that come before the specified cursor.
-first: Int
-
-Returns the first n elements from the list.
-last: Int
-
-Returns the last n elements from the list.
-
-"""
-SG_LIMITATION_STR_TEMPLATE = "last:10"
-
 
 def run_gql_query(endpoint_url, query, auth):
     logger.info(f"Run GraphQL Query against: {endpoint_url}.")
@@ -58,7 +40,8 @@ def run_gql_query(endpoint_url, query, auth):
 def prepare_gql_query(query, **data):
     """Modify the gql query to contain the correct data.
 
-    This will be necessary for paginated pages, where we need to modify the next query based on a returned cursor.
+    This will be necessary for paginated pages, where we need to modify 
+    the next query based on a returned cursor.
 
     data: collects all keywords that are necessary to populate the query.
 
@@ -143,38 +126,3 @@ def get_raw_stargazer_info(has_next_page=False, is_initial=True, **data):
         )
 
     return stargazers
-
-
-def flatten_data(data):
-    return data
-
-
-# # DEPRECATED
-# def get_repository_data(rep_owner, rep_name):
-#     """Get all data for a single repository.
-
-#     Follow all cursors until everything is fetched.
-
-#     rep_owner: Name of the owner of the repository
-#     rep_name: Name of the repository
-
-#     Example: github.com/JimFawkes/luther/
-#     -> rep_owner = JimFawkes
-#     -> rep_name = luther
-
-#     Return a dictionary-like object that holds all relevant data for a single respository.
-#     """
-
-#     # Will need to loop over the two functions prepare_gql_query and run_gql_query
-#     query = prepare_gql_query(
-#         query=QUERY_TEMPLATE, rep_owner=rep_owner, rep_name=rep_name
-#     )
-#     response = run_gql_query(
-#         endpoint_url=GITHUB_API_ENDPOINT,
-#         query=query,
-#         auth=(GITHUB_USERNAME, GITHUB_API_TOKEN),
-#     )
-
-#     data = clean_gql_query_response(response)
-
-#     return data

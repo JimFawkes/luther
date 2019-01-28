@@ -12,10 +12,10 @@ logger.add(f"logs/{_log_file_name}.log", rotation="1 day")
 class LutherBaseClass:
     def __init__(self, **data):
 
-        self._id = data.get('_id', -1)
-        self._uuid = data.get('_uuid', str(uuid.uuid4()))
-        self._parent_uuid = data.get('_parent_uuid', None)
-        self._manually_modified = data.get('_manually_modified', False)
+        self._id = data.get("_id", -1)
+        self._uuid = data.get("_uuid", str(uuid.uuid4()))
+        self._parent_uuid = data.get("_parent_uuid", None)
+        self._manually_modified = data.get("_manually_modified", False)
 
         self._read_from_storage = data.get("read_from_storage", False)
         if "filename" in data:
@@ -24,11 +24,12 @@ class LutherBaseClass:
         if self._read_from_storage:
             self._date_requested = data.get("_date_requested")
         else:
-            self._date_requested = datetime.datetime.utcnow().replace(tzinfo=pytz.utc).date()
+            self._date_requested = (
+                datetime.datetime.utcnow().replace(tzinfo=pytz.utc).date()
+            )
 
         if not hasattr(self, "is_clean"):
             self.is_clean = False
-
 
     def __hash__(self):
         return hash(self._read_from_storage, self._date_requested)
@@ -44,7 +45,7 @@ class LutherBaseClass:
     def create_from_list(cls, raw_list, additional_data={}):
         created_list = []
         for idx, raw_dict in enumerate(raw_list):
-            additional_data['_id'] = idx
+            additional_data["_id"] = idx
             combined_dict = {**raw_dict, **additional_data}
             created_list.append(cls.create_from_dict(**combined_dict))
 

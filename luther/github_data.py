@@ -1,7 +1,15 @@
+"""Define all classes representing the GitHub Data.
+
+Stargazers represent the user that has starred a GitHub Repository.
+
+All objects inherit from base.LutherBaseClass.
+"""
+
 import datetime
 import pytz
+import os
 from loguru import logger
-import pickle
+
 from get_github_data import get_raw_stargazer_info
 from base import LutherBaseClass
 
@@ -20,7 +28,6 @@ class DataValidationError(Exception):
     pass
 
 
-
 class StarGazer(LutherBaseClass):
     def __init__(self, **sg_data):
         """Read GitHub GraphQL StarGazer data.
@@ -36,9 +43,11 @@ class StarGazer(LutherBaseClass):
         self.repository_url = sg_data.get("repository_url")
         self._read_from_storage = sg_data.get("read_from_storage", False)
 
-        self.date_starred = datetime.datetime.strptime(
-            self.date_starred, GITHUB_DATETIME_FORMAT
-        ).replace(tzinfo=pytz.utc).date()
+        self.date_starred = (
+            datetime.datetime.strptime(self.date_starred, GITHUB_DATETIME_FORMAT)
+            .replace(tzinfo=pytz.utc)
+            .date()
+        )
 
         super().__init__(**sg_data)
 
@@ -58,14 +67,35 @@ class StarGazer(LutherBaseClass):
         )
 
     def __lt__(self, other):
-        self_ = (self.date_starred, self.repository_url, self.user_id, self._date_requested)
-        other_ = (other.date_starred, other.repository_url, other.user_id, other._date_requested)
+        self_ = (
+            self.date_starred,
+            self.repository_url,
+            self.user_id,
+            self._date_requested,
+        )
+        other_ = (
+            other.date_starred,
+            other.repository_url,
+            other.user_id,
+            other._date_requested,
+        )
         return self_ < other_
 
     def __eq__(self, other):
-        self_ = (self.date_starred, self.repository_url, self.user_id, self._date_requested)
-        other_ = (other.date_starred, other.repository_url, other.user_id, other._date_requested)
+        self_ = (
+            self.date_starred,
+            self.repository_url,
+            self.user_id,
+            self._date_requested,
+        )
+        other_ = (
+            other.date_starred,
+            other.repository_url,
+            other.user_id,
+            other._date_requested,
+        )
         return self_ == other_
+
 
 class Repository(LutherBaseClass):
     def __init__(self, **repo_data):
@@ -94,9 +124,11 @@ class Repository(LutherBaseClass):
 
         # Manipulated fields
         self.owner, self.name = self.full_name.split("/")
-        self.date_created = datetime.datetime.strptime(
-            self.date_created, GITHUB_DATETIME_FORMAT
-        ).replace(tzinfo=pytz.utc).date()
+        self.date_created = (
+            datetime.datetime.strptime(self.date_created, GITHUB_DATETIME_FORMAT)
+            .replace(tzinfo=pytz.utc)
+            .date()
+        )
 
         self.stargazers = []
 
@@ -110,7 +142,6 @@ class Repository(LutherBaseClass):
         self.pickle()
 
         # Check if clean
-        logger.info(f"Created {self}")
         logger.success(f"Created {self}")
 
     def __repr__(self):
@@ -133,8 +164,12 @@ class Repository(LutherBaseClass):
 
     @property
     def unique_id(self):
-        _id = self.full_name.strip().replace('/', '_')
-        _id += str(self._id) + '_' + str(self._uuid)
+        """Return a unique ID, used as part of the pickle filename.
+
+        See base.py for more details on where it is used.
+        """
+        _id = self.full_name.strip().replace("/", "_")
+        _id += str(self._id) + "_" + str(self._uuid)
         return _id
 
     def create_stargazers(self):
@@ -151,6 +186,7 @@ class Repository(LutherBaseClass):
 
     @property
     def date_requested(self):
+        """Date when the data was requested."""
         return self._date_requested
 
     def remove_duplicate_stargazers(self):

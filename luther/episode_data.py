@@ -1,7 +1,18 @@
+""" Classes to store all Objects represnting a Podcast.
+
+Every Class can create its children and start the data retrieval process.
+E.g. an Episode can create all its child references. A reference can create its linked
+repositories and  in order to do this, start the GitHub API requests.
+
+All objects can pickle them selfs and also unpickle themselfs if the corresponding filename
+is passed.
+
+"""
+
 import re
 from loguru import logger
 
-from github_data import Repository, StarGazer
+from github_data import Repository
 from base import LutherBaseClass
 from get_github_data import get_raw_repository_info
 
@@ -9,6 +20,7 @@ from get_github_data import get_raw_repository_info
 _log_file_name = __file__.split("/")[-1].split(".")[0]
 logger.add(f"logs/{_log_file_name}.log", rotation="1 day")
 logger.add(f"logs/success.log", rotation="1 day", level="SUCCESS")
+
 
 class Reference(LutherBaseClass):
     def __init__(self, **ref_data):
@@ -39,6 +51,13 @@ class Reference(LutherBaseClass):
         return hash((self.text, self.url, self._is_github_ref))
 
     def extract_rep_info_from_url(self):
+        """Use the github url to extract the repository owner and name.
+        
+        If this step fails, the corresponding repository and stargazers will not be
+        fetched.
+
+        Check the logs for information about which could not be retrieved.
+        """
         if self._is_github_ref:
             logger.debug(
                 f"Extracting owner and name of github ({self._is_github_ref}) repo: {self.url}, {self}"
@@ -62,6 +81,10 @@ class Reference(LutherBaseClass):
 
     @property
     def unique_id(self):
+        """Return a unique ID, used as part of the pickle filename.
+
+        See base.py for more details on where it is used.
+        """
         _id = (
             str(self.episode_number)
             + "_"
@@ -123,7 +146,7 @@ class Episode(LutherBaseClass):
         super().__init__(**episode_data)
         if "reference_list" in episode_data:
             self.append_raw_references(episode_data["reference_list"])
-        
+
         logger.success(f"Created {self}")
 
     def __repr__(self):
@@ -171,11 +194,17 @@ class Episode(LutherBaseClass):
 
     @property
     def unique_id(self):
+        """Return a unique ID, used as part of the pickle filename.
+
+        See base.py for more details on where it is used.
+        """
         title = self.title.strip().lower().replace(" ", "_")
         return title + "_" + "#" + str(self.number)
 
     @logger.catch
     def remove_duplicate_references(self):
+        """Remove duplicates and return self.
+        """
         old_count = self.reference_count
         try:
             self.references = list(set(self.references))
@@ -269,6 +298,10 @@ class Podcast(LutherBaseClass):
 
     @property
     def unique_id(self):
+        """Return a unique ID, used as part of the pickle filename.
+
+        See base.py for more details on where it is used.
+        """
         author = self.author.strip().lower().replace(" ", "_")
         name = self.name.strip().lower().replace(" ", "_")
         return author + "_" + name
@@ -283,6 +316,10 @@ class Podcast(LutherBaseClass):
         return self.remove_duplicate_episodes()
 
     def append_raw_episodes(self, raw_episodes):
+        """Take json data about episodes and create/return the corresponding objects.
+
+        All created Episodes will be Appended to self.
+        """
         logger.info(f"Create and Append Episodes from raw data.")
         if raw_episodes is None:
             logger.warning(

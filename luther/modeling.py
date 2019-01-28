@@ -1,3 +1,12 @@
+"""Prepare the df for further processing.
+Test AR Models with different lags.
+Run the validation on the models.
+
+Note: Other tested models, such as SARIMAX and ARMA, were tested in a jupyter notebook prior
+to this implementation.
+
+The results and the analysis of the results can be done using the results_*.log log-file.
+"""
 import luther
 import numpy as np
 import pandas as pd
@@ -17,10 +26,18 @@ logger.add(f"logs/success.log", rotation="1 day", level="SUCCESS")
 
 
 @logger.catch
-def prepare_df_for_modeling(df, column_name="star_count_diff"):
-    """
+def prepare_df_for_modeling(df, column_name="star_count_rel"):
+    """Group data by the fake_date column and return multiple aggregate
+    functions for column_name.
 
-    'star_count_rel'
+    Aggregate functions:
+        - mean
+        - std
+        - count
+        - min/max
+        - sum
+
+    return: GroupedDataFrame
     """
     logger.info(f"Prepare DataFrame for modeling on column {column_name}.")
     group = df.groupby(["fake_date"])
@@ -31,16 +48,17 @@ def prepare_df_for_modeling(df, column_name="star_count_diff"):
     grouped.index = pd.to_datetime(grouped.index)
     return grouped
 
+
 @logger.catch
 def fit_arma_model(lag, dataframe, q=0):
-    ar = sm.tsa.ARMA(
-        dataframe["mean"], dates=dataframe.index, freq="D", order=(lag, q)
-    )
+    ar = sm.tsa.ARMA(dataframe["mean"], dates=dataframe.index, freq="D", order=(lag, q))
     ar_fit = ar.fit()
     return ar_fit
 
+
 @logger.catch
 def ar_model_fitting(training, column_name, max_ar=5):
+    """Test max_ar no. of lags for an AR model."""
     ar_models = []
     for lag in range(1, max_ar + 1):
 
@@ -56,14 +74,19 @@ def ar_model_fitting(training, column_name, max_ar=5):
 
 @logger.catch
 def predict_lin_reg(betas, const, xs):
+    """Calculate y_predict"""
     zipped = zip(betas, xs)
     return sum([beta * x for beta, x in zipped]) + const
 
+
 @logger.catch
 def predict_ar_model(ar_model, dataframe):
+    """Given an AR(X) model, predict the y values and calculate the RSME.
+    """
     lag, betas, const, column_name = ar_model
     mod_validation_data = dataframe[
-        pd.to_datetime(dataframe.index) > datetime.datetime(2019, 1, 1, 12, 30) - datetime.timedelta(days=lag)
+        pd.to_datetime(dataframe.index)
+        > datetime.datetime(2019, 1, 1, 12, 30) - datetime.timedelta(days=lag)
     ]
     grouped_star = mod_validation_data[
         "mean"
@@ -84,6 +107,7 @@ def predict_ar_model(ar_model, dataframe):
     rmse = np.sqrt(np.mean(residuals))
 
     return (lag, betas, const, rmse, calculations)
+
 
 @logger.catch
 def ar_model_validation(ar_model_results, validation):
@@ -132,8 +156,7 @@ def validate_all(
         prep_training = prepare_df_for_modeling(training, column_name=column_name)
         prep_validation = prepare_df_for_modeling(validation, column_name=column_name)
         ar_model_results = ar_model_fitting(prep_training, column_name)
-        validation_results = ar_model_validation(ar_model_results, prep_validation)
+        _ = ar_model_validation(ar_model_results, prep_validation)
 
     logger.info(f"Finished Validation Pipeline.")
     logger.success(f"Finished validate_all for {column_names}")
-
